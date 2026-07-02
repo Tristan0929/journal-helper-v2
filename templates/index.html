@@ -141,6 +141,7 @@
         /* 打印样式：隐藏侧边栏和浮动按钮，保留红蓝颜色 */
         @media print {
             body { background: white; padding: 0; }
+            .container { margin-right: 0 !important; }  /* 防止侧边栏打开时偏移 */
             .container > *:not(#result) { display: none !important; }
             .sidebar, .sidebar-toggle, .context-bar { display: none !important; }
             #result {
@@ -205,6 +206,7 @@
         <span>💬 AI 导师</span>
         <div style="display:flex; gap:0.5rem;">
             <button class="btn-secondary" style="padding:0.3rem 0.8rem;" onclick="exportChatMD()">⬇️ 导出 MD</button>
+            <button class="btn-secondary" style="padding:0.3rem 0.8rem;" onclick="exportChatPDF()">🖨️ 导出 PDF</button>
             <button style="background:none; border:none; font-size:1.2rem; cursor:pointer;" onclick="toggleSidebar()">✕</button>
         </div>
     </div>
@@ -360,6 +362,7 @@
         }
     }
 
+    // 导出对话为 Markdown
     function exportChatMD() {
         if (chatHistory.length === 0) {
             alert('没有对话记录');
@@ -383,6 +386,38 @@
         a.download = `ai-chat-${new Date().toISOString().slice(0,10)}.md`;
         a.click();
         URL.revokeObjectURL(url);
+    }
+
+    // 导出对话为 PDF
+    function exportChatPDF() {
+        if (chatHistory.length === 0) {
+            alert('没有对话记录');
+            return;
+        }
+        let html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>对话记录</title>';
+        html += '<style>body{font-family:sans-serif; padding:2rem; line-height:1.6; max-width:800px; margin:auto;}';
+        html += 'h1{text-align:center; margin-bottom:2rem;} .msg{margin-bottom:2rem;} .user{color:#555;} .ai{color:#000; background:#f0f0f0; padding:1rem; border-radius:8px;}';
+        html += '.context{font-size:0.9rem; color:#888; border-left:3px solid #ccc; padding-left:1rem; margin-bottom:0.5rem;}';
+        html += '</style></head><body><h1>AI 导师对话记录</h1>';
+        
+        chatHistory.forEach(msg => {
+            html += '<div class="msg">';
+            if (msg.role === 'user') {
+                html += '<div class="user">';
+                if (msg.context) {
+                    html += `<div class="context">上下文：${msg.context}</div>`;
+                }
+                html += `<strong>🧑 你：</strong>${msg.content}</div>`;
+            } else {
+                html += `<div class="ai"><strong>🤖 AI：</strong>${md.render(msg.content)}</div>`;
+            }
+            html += '</div>';
+        });
+        html += '</body></html>';
+        const win = window.open('', '_blank');
+        win.document.write(html);
+        win.document.close();
+        win.onload = () => win.print();
     }
 </script>
 </body>
